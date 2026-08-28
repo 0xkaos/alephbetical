@@ -189,6 +189,28 @@
         .font-hadasim { font-family: 'Hadasim CLM', sans-serif; }
         .flashcard-front.font-ktavyad { font-size: 36px; }
         .flashcard-back.font-ktavyad { font-size: 18px; }
+        .script-font-stage {
+            position: absolute;
+            inset: 12px;
+            overflow: hidden;
+            pointer-events: none;
+        }
+        .script-font-stage canvas {
+            display: block;
+            width: 100%;
+            height: 100%;
+        }
+        .script-font-fallback {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 100%;
+            height: 100%;
+            direction: rtl;
+            color: white;
+            font-family: 'KtavYadCLM-MediumItalic', sans-serif;
+            font-size: 48px;
+        }
         /* Style for the checkbox */
         #nikkud-checkbox {
             -webkit-appearance: none;
@@ -218,8 +240,51 @@
         
         .font-size-controls {
             display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
             gap: 5px;
             margin-top: 10px;
+        }
+        .script-font-controls {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            justify-content: center;
+            gap: 8px 14px;
+            width: 100%;
+            max-width: 520px;
+            margin-top: 10px;
+            padding: 10px 12px;
+            border: 1px solid #ff9900;
+            border-radius: 8px;
+            background: rgba(255, 255, 255, 0.75);
+        }
+        .script-font-controls[hidden] {
+            display: none;
+        }
+        .script-font-control {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 14px;
+            color: #555;
+        }
+        .script-font-control input[type="range"] {
+            width: 92px;
+            accent-color: #ff9900;
+        }
+        .script-font-control output {
+            min-width: 38px;
+            color: #333;
+            font-variant-numeric: tabular-nums;
+        }
+        #script-replay {
+            padding: 6px 12px;
+            border: 1px solid #ff9900;
+            border-radius: 5px;
+            background: #fff;
+            color: #333;
+            cursor: pointer;
         }
         .font-size-button {
             width: 30px;
@@ -517,6 +582,7 @@
                 <option value="font-hadasim">Serif 1</option>
                 <option value="font-nikkud">Serif 2</option>
                 <option value="font-rashi">Noto Rashi</option>
+                <option value="font-script">Animated Script</option>
             </select>
             <div class="checkbox-stack">
             <div class="checkbox-inline">
@@ -529,6 +595,25 @@
             </div>
         </div>
         </div>
+    </div>
+
+    <div class="script-font-controls" id="script-font-controls" hidden>
+        <label class="script-font-control" for="script-size">
+            Size
+            <input type="range" id="script-size" min="60" max="140" step="5" value="100">
+            <output id="script-size-output" for="script-size">100%</output>
+        </label>
+        <label class="script-font-control" for="script-stroke">
+            Stroke
+            <input type="range" id="script-stroke" min="2" max="14" step="1" value="7">
+            <output id="script-stroke-output" for="script-stroke">7px</output>
+        </label>
+        <label class="script-font-control" for="script-speed">
+            Speed
+            <input type="range" id="script-speed" min="0.5" max="3" step="0.25" value="1.5">
+            <output id="script-speed-output" for="script-speed">1.5×</output>
+        </label>
+        <button type="button" id="script-replay">Replay</button>
     </div>
     
     <div class="flashcard-container" id="flashcard-container">
@@ -566,12 +651,24 @@
     <div class="word-list" id="word-list"></div>
     <script src="data.js"></script>
     <script src="data2.js"></script>
+    <script type="importmap">
+        {
+            "imports": {
+                "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+                "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
+            }
+        }
+    </script>
+    <script type="module" src="script-font.js"></script>
  <script>
 // JavaScript Code for Flashcard Functionality
 let currentLesson = null;
 let currentShoresh = null;
 let currentCardIndex = 0;
 let isNavigating = false;
+let currentFont = 'font-default';
+let currentFrontText = '';
+let scriptRenderTimer = null;
 
 // Get DOM elements
 const lessonSelect = document.getElementById('lesson-select');
@@ -585,6 +682,13 @@ const progress = document.getElementById('progress');
 const fontSelect = document.getElementById('font-select');
 const nikkudCheckbox = document.getElementById('nikkud-checkbox');
 const wordListContainer = document.getElementById('word-list');
+const scriptFontControls = document.getElementById('script-font-controls');
+const scriptSize = document.getElementById('script-size');
+const scriptStroke = document.getElementById('script-stroke');
+const scriptSpeed = document.getElementById('script-speed');
+const scriptSizeOutput = document.getElementById('script-size-output');
+const scriptStrokeOutput = document.getElementById('script-stroke-output');
+const scriptSpeedOutput = document.getElementById('script-speed-output');
 
 // Populate the lesson selection dropdown without sorting
 function populateLessonSelect() {
@@ -674,9 +778,15 @@ function updateFlashcard() {
     }
     const card = cardsArray[currentCardIndex];
     let hebrewText = nikkudCheckbox.checked ? card.hebrew : (card.hebrew_no_vowels || card.hebrew);
+    currentFrontText = hebrewText;
     
     // Front side
-    front.innerHTML = `<div class="hebrew-text">${hebrewText}</div>`;
+    if (currentFont === 'font-script') {
+        front.innerHTML = `<div class="script-font-stage" id="script-font-stage" role="img"><div class="script-font-fallback">${hebrewText}</div></div>`;
+        document.getElementById('script-font-stage').setAttribute('aria-label', hebrewText);
+    } else {
+        front.innerHTML = `<div class="hebrew-text">${hebrewText}</div>`;
+    }
     
     // Add audio button to front
     front.innerHTML += `<button class="audio-button" id="play-audio" type="button" aria-label="Play audio"><i class="icon ion-md-volume-high" aria-hidden="true"></i></button>`;
@@ -789,6 +899,10 @@ function updateFlashcard() {
                 audio.play();
             });
         }
+    }
+
+    if (currentFont === 'font-script') {
+        scheduleScriptFontRender(!flashcard.classList.contains('flipped'));
     }
 
     progress.textContent = `Card ${currentCardIndex + 1} of ${cardsArray.length}`;
@@ -907,19 +1021,75 @@ fontSelect.addEventListener('change', (e) => applyFont(e.target.value));
 
 // Function to apply font to flashcard
 function applyFont(font) {
-    ['font-default', 'font-alef', 'font-noto', 'font-varela', 'font-custom', 'font-custom-ttf', 'font-nikkud', 'font-rashi', 'font-dorian', 'font-ktavyad', 'font-hadasim'].forEach(cls => {
+    const scriptModeChanged = (currentFont === 'font-script') !== (font === 'font-script');
+    currentFont = font;
+
+    ['font-default', 'font-alef', 'font-noto', 'font-varela', 'font-custom', 'font-custom-ttf', 'font-nikkud', 'font-rashi', 'font-dorian', 'font-ktavyad', 'font-hadasim', 'font-script'].forEach(cls => {
         front.classList.remove(cls);
         back.classList.remove(cls);
     });
     front.classList.add(font);
-    back.classList.add(font);
+    back.classList.add(font === 'font-script' ? 'font-default' : font);
+    scriptFontControls.hidden = font !== 'font-script';
+
+    if (scriptModeChanged) {
+        if (font !== 'font-script') {
+            window.scriptFontWriter?.unmount();
+        }
+        updateFlashcard();
+    } else if (font === 'font-script') {
+        scheduleScriptFontRender(!flashcard.classList.contains('flipped'));
+    }
 }
+
+function getScriptFontSettings() {
+    return {
+        size: Number(scriptSize.value),
+        stroke: Number(scriptStroke.value),
+        speed: Number(scriptSpeed.value)
+    };
+}
+
+function updateScriptFontOutputs() {
+    scriptSizeOutput.value = `${scriptSize.value}%`;
+    scriptStrokeOutput.value = `${scriptStroke.value}px`;
+    scriptSpeedOutput.value = `${Number(scriptSpeed.value).toFixed(2).replace(/0+$/, '').replace(/\.$/, '')}×`;
+}
+
+function renderScriptFont(animate = true) {
+    if (currentFont !== 'font-script') return;
+    const stage = document.getElementById('script-font-stage');
+    if (!stage || !window.scriptFontWriter) return;
+    window.scriptFontWriter.write(stage, currentFrontText, getScriptFontSettings(), { animate });
+}
+
+function scheduleScriptFontRender(animate = true) {
+    clearTimeout(scriptRenderTimer);
+    scriptRenderTimer = setTimeout(() => renderScriptFont(animate), 60);
+}
+
+[scriptSize, scriptStroke, scriptSpeed].forEach(control => {
+    control.addEventListener('input', () => {
+        updateScriptFontOutputs();
+        scheduleScriptFontRender(!flashcard.classList.contains('flipped'));
+    });
+});
+
+document.getElementById('script-replay').addEventListener('click', () => renderScriptFont(true));
+window.addEventListener('script-font-ready', () => renderScriptFont(!flashcard.classList.contains('flipped')));
+updateScriptFontOutputs();
 
 // Nikkud checkbox change event
 nikkudCheckbox.addEventListener('change', updateFlashcard);
 
 // Font size controls
 document.getElementById('font-size-decrease').addEventListener('click', () => {
+    if (currentFont === 'font-script') {
+        scriptSize.value = Math.max(Number(scriptSize.min), Number(scriptSize.value) - Number(scriptSize.step));
+        updateScriptFontOutputs();
+        renderScriptFont(true);
+        return;
+    }
     if (flashcard.classList.contains('flipped')) {
         // Adjust back when flipped
         let currentBackSize = parseInt(window.getComputedStyle(back).fontSize);
@@ -934,6 +1104,12 @@ document.getElementById('font-size-decrease').addEventListener('click', () => {
 });
 
 document.getElementById('font-size-increase').addEventListener('click', () => {
+    if (currentFont === 'font-script') {
+        scriptSize.value = Math.min(Number(scriptSize.max), Number(scriptSize.value) + Number(scriptSize.step));
+        updateScriptFontOutputs();
+        renderScriptFont(true);
+        return;
+    }
     if (flashcard.classList.contains('flipped')) {
         // Adjust back when flipped
         let currentBackSize = parseInt(window.getComputedStyle(back).fontSize);
@@ -1138,6 +1314,12 @@ flashcard.addEventListener('click', (e) => {
         if (currentLesson || currentShoresh) {
             flashcard.classList.toggle('flipped');
         }
+    }
+});
+
+flashcard.addEventListener('transitionend', (e) => {
+    if (e.propertyName === 'transform' && !flashcard.classList.contains('flipped') && currentFont === 'font-script') {
+        renderScriptFont(true);
     }
 });
 
