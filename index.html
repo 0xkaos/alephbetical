@@ -414,6 +414,13 @@
             vertical-align: middle;
             margin-top: 0; /* Ensure no extra margin on top */
         }
+        .checkbox-inline.is-disabled {
+            opacity: 0.45;
+        }
+        .checkbox-inline.is-disabled label,
+        .checkbox-inline.is-disabled input {
+            cursor: not-allowed;
+        }
         @media (max-width: 500px) {
             .top-controls {
                 flex-direction: column;
@@ -702,6 +709,7 @@ const flipButton = document.getElementById('flip-button');
 const progress = document.getElementById('progress');
 const fontSelect = document.getElementById('font-select');
 const nikkudCheckbox = document.getElementById('nikkud-checkbox');
+const nikkudControl = nikkudCheckbox.closest('.checkbox-inline');
 const wordListContainer = document.getElementById('word-list');
 const scriptFontControls = document.getElementById('script-font-controls');
 const scriptSize = document.getElementById('script-size');
@@ -1044,18 +1052,25 @@ fontSelect.addEventListener('change', (e) => applyFont(e.target.value));
 // Function to apply font to flashcard
 function applyFont(font) {
     const scriptModeChanged = (currentFont === 'font-script') !== (font === 'font-script');
+    const isScriptFont = font === 'font-script';
     currentFont = font;
+
+    if (isScriptFont) {
+        nikkudCheckbox.checked = false;
+    }
+    nikkudCheckbox.disabled = isScriptFont;
+    nikkudControl.classList.toggle('is-disabled', isScriptFont);
 
     ['font-default', 'font-alef', 'font-noto', 'font-varela', 'font-custom', 'font-custom-ttf', 'font-nikkud', 'font-rashi', 'font-dorian', 'font-ktavyad', 'font-hadasim', 'font-script'].forEach(cls => {
         front.classList.remove(cls);
         back.classList.remove(cls);
     });
     front.classList.add(font);
-    back.classList.add(font === 'font-script' ? 'font-default' : font);
-    scriptFontControls.hidden = font !== 'font-script';
+    back.classList.add(isScriptFont ? 'font-default' : font);
+    scriptFontControls.hidden = !isScriptFont;
 
     if (scriptModeChanged) {
-        if (font !== 'font-script') {
+        if (!isScriptFont) {
             window.scriptFontWriter?.unmount();
         }
         updateFlashcard();
