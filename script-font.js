@@ -63,7 +63,7 @@ class ScriptFontWriter {
         this.totalAnimationDuration = 0;
         this.isAnimating = false;
         this.scale = 1;
-        this.settings = { size: 60, stroke: 7, speed: 1.5 };
+        this.settings = { size: 60, stroke: 7, speed: 1 };
         this.effectiveStroke = 7;
         this.writeGeneration = 0;
         this.resizeFrame = null;
@@ -97,7 +97,7 @@ class ScriptFontWriter {
         this.settings = {
             size: Number(settings.size) || 60,
             stroke: Number(settings.stroke) || 7,
-            speed: Number(settings.speed) || 1.5
+            speed: Number(settings.speed) || 1
         };
 
         try {
