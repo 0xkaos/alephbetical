@@ -36,8 +36,12 @@ const CHAR_MAP = {
 const CURVE_SEGMENTS = 96;
 const BASE_SPACING = 100;
 const LETTER_GAP = 12;
-const DRAW_SPEED = 0.24;
 const LINE_ADVANCE = 195;
+const PHRASE_BASE_DURATION = 650;
+const CHARACTER_DURATION = 230;
+const FULL_RATE_CHARACTERS = 16;
+const LONG_CHARACTER_FACTOR = 0.35;
+const EQUAL_CHARACTER_WEIGHT = 0.55;
 
 class ScriptFontWriter {
     constructor() {
@@ -56,6 +60,7 @@ class ScriptFontWriter {
         this.animationQueue = [];
         this.animationFrame = null;
         this.animationStart = 0;
+        this.totalAnimationDuration = 0;
         this.isAnimating = false;
         this.scale = 1;
         this.settings = { size: 60, stroke: 7, speed: 1.5 };
@@ -376,17 +381,34 @@ class ScriptFontWriter {
 
     configureAnimation(animate) {
         this.stopAnimation();
+        const itemCount = this.animationQueue.length;
+        let totalLength = 0;
+
+        for (const item of this.animationQueue) {
+            item.length = 0;
+            for (const stroke of item.strokes) {
+                stroke.length = stroke.rawLength * this.scale;
+                item.length += stroke.length;
+                stroke.line.geometry.instanceCount = animate ? 0 : stroke.line.userData.totalSegments;
+            }
+            totalLength += item.length;
+        }
+
+        const fullRateCharacters = Math.min(itemCount, FULL_RATE_CHARACTERS);
+        const compressedCharacters = Math.max(0, itemCount - FULL_RATE_CHARACTERS) * LONG_CHARACTER_FACTOR;
+        const characterUnits = fullRateCharacters + compressedCharacters;
+        this.totalAnimationDuration = itemCount
+            ? (PHRASE_BASE_DURATION + characterUnits * CHARACTER_DURATION) / Math.max(0.1, this.settings.speed)
+            : 0;
+
         let startTime = 0;
 
         for (const item of this.animationQueue) {
-            let itemLength = 0;
-            for (const stroke of item.strokes) {
-                stroke.length = stroke.rawLength * this.scale;
-                itemLength += stroke.length;
-                stroke.line.geometry.instanceCount = animate ? 0 : stroke.line.userData.totalSegments;
-            }
+            const equalShare = itemCount ? 1 / itemCount : 0;
+            const strokeShare = totalLength ? item.length / totalLength : equalShare;
+            const durationShare = EQUAL_CHARACTER_WEIGHT * equalShare + (1 - EQUAL_CHARACTER_WEIGHT) * strokeShare;
             item.startTime = startTime;
-            item.duration = itemLength / (DRAW_SPEED * this.settings.speed);
+            item.duration = this.totalAnimationDuration * durationShare;
             startTime += item.duration;
         }
 
@@ -424,7 +446,7 @@ class ScriptFontWriter {
             }
 
             animationComplete = false;
-            let distance = itemElapsed * DRAW_SPEED * this.settings.speed;
+            let distance = item.length * (itemElapsed / item.duration);
             for (const stroke of item.strokes) {
                 if (distance >= stroke.length) {
                     stroke.line.geometry.instanceCount = stroke.line.userData.totalSegments;
