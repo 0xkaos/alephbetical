@@ -403,7 +403,26 @@
             color: white;
             line-height: 18px;
         }
-      .audio-button i {
+        .audio-button {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            min-width: 48px;
+            min-height: 48px;
+            padding: 12px;
+            box-sizing: border-box;
+            background: none;
+            border: none;
+            cursor: pointer;
+            touch-action: manipulation;
+        }
+        #play-audio {
+            position: absolute;
+            right: 4px;
+            top: 4px;
+            z-index: 2;
+        }
+        .audio-button i {
             font-size: 20px;
             color: white;
             transition: color 0.3s ease;
@@ -515,8 +534,8 @@
     <div class="flashcard-container" id="flashcard-container">
         <div class="flashcard" id="flashcard">
             <div class="flashcard-side flashcard-front font-default" id="front">
-            <button class="audio-button" id="play-audio">
-                <i class="icon ion-md-volume-high"></i>
+            <button class="audio-button" id="play-audio" type="button" aria-label="Play audio">
+                <i class="icon ion-md-volume-high" aria-hidden="true"></i>
             </button>
             </div>
             <div class="flashcard-side flashcard-back font-default" id="back">
@@ -660,12 +679,12 @@ function updateFlashcard() {
     front.innerHTML = `<div class="hebrew-text">${hebrewText}</div>`;
     
     // Add audio button to front
-    front.innerHTML += `<button class="audio-button" id="play-audio" style="position: absolute; right: 10px; top: 10px; background: none; border: none; cursor: pointer; color: white; font-size: 20px;"><i class="icon ion-md-volume-high"></i></button>`;
+    front.innerHTML += `<button class="audio-button" id="play-audio" type="button" aria-label="Play audio"><i class="icon ion-md-volume-high" aria-hidden="true"></i></button>`;
 
     // Set up audio for the front side
     let frontAudioButton = document.getElementById('play-audio');
     if (card.audio) {
-        frontAudioButton.style.display = 'block'; // Show button if audio exists
+        frontAudioButton.style.display = 'inline-flex'; // Show button if audio exists
         frontAudioButton.addEventListener('click', function(e) {
             e.stopPropagation(); // Prevent click from flipping the card
             let audio = new Audio(card.audio);
@@ -745,7 +764,7 @@ function updateFlashcard() {
         // Create audio button if audio2 is present
         let sentenceAudioButton = '';
         if (card.audio2) {
-            sentenceAudioButton = `<button class="audio-button backside" id="play-sentence-audio" style="background: none; border: none; cursor: pointer; font-size: 20px;"><i class="icon ion-md-volume-high"></i></button>`;
+            sentenceAudioButton = `<button class="audio-button backside" id="play-sentence-audio" type="button" aria-label="Play sentence audio"><i class="icon ion-md-volume-high" aria-hidden="true"></i></button>`;
         }
 
         backContent += `
@@ -1115,7 +1134,7 @@ window.onload = () => {
 
 // Ensure that clicking the flashcard flips it, unless clicking an audio button
 flashcard.addEventListener('click', (e) => {
-    if (e.target.id !== 'play-audio' && e.target.id !== 'play-sentence-audio') {
+    if (!e.target.closest('.audio-button')) {
         if (currentLesson || currentShoresh) {
             flashcard.classList.toggle('flipped');
         }
