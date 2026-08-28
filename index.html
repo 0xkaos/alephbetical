@@ -272,13 +272,11 @@
         .email-button:hover {
             transform: scale(1.2);
         }
-        /* Menu container styles */
-        .menu-container {
+        /* Lesson menu styles */
+        #lesson-select {
             flex: 1;
+            width: 100%;
             max-width: 400px;
-            position: relative;
-        }
-        .menu-header {
             background-color: #fff;
             color: #333;
             padding: 10px;
@@ -288,50 +286,9 @@
             border-radius: 5px;
             transition: all 0.3s ease;
         }
-        .menu-header:hover {
+        #lesson-select:hover {
             background-color: #fff9e6;
             box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-        }
-        .menu-content {
-            display: none;
-            position: absolute;
-            width: 100%;
-            background-color: #fff;
-            box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.2);
-            z-index: 1;
-            border: 1px solid #ff9900;
-            border-radius: 5px;
-            top: 100%;
-            left: 0;
-            margin-top: 5px;
-        }
-        .menu-item {
-            padding: 10px 15px;
-            cursor: pointer;
-            border-bottom: 1px solid #ff9900;
-            display: flex;
-            align-items: center;
-            transition: background-color 0.3s;
-        }
-        .menu-item:hover {
-            background-color: #e6e6e6;
-        }
-        .menu-item:last-child {
-            border-bottom: none;
-        }
-        .menu-title {
-            color: #333;
-            flex: 1;
-            margin-right: 10px;
-        }
-        .submenu-select {
-            width: 100%;
-            padding: 5px;
-            border: 1px solid #ff9900;
-            border-radius: 4px;
-            display: none;
-            position: relative;
-            z-index: 2;
         }
         .top-controls {
             width: 100%;
@@ -377,7 +334,7 @@
                 flex-direction: column;
                 align-items: center;
             }
-            .menu-container, .font-and-checkbox {
+            #lesson-select, .font-and-checkbox {
                 width: 100%;
                 max-width: 100%;
             }
@@ -526,17 +483,9 @@
 </head>
 <body>
     <div class="top-controls">
-        <div class="menu-container">
-            <div class="menu-header" role="button" tabindex="0" aria-expanded="false"></div>
-            <div class="menu-content">
-                <div class="menu-item" id="lesson-menu">
-                    <div class="menu-title">Words & Phrases</div>
-                    <select id="lesson-select" class="submenu-select">
-                        <option value="" disabled selected>-</option>
-                    </select>
-                </div>
-            </div>
-        </div>
+        <select id="lesson-select" aria-label="Words & Phrases">
+            <option value="" disabled selected>Words & Phrases</option>
+        </select>
         <div class="font-and-checkbox">
             <select id="font-select">
                 <option value="font-default" selected>Sans-serif</option>
@@ -606,10 +555,7 @@ let currentCardIndex = 0;
 let isNavigating = false;
 
 // Get DOM elements
-const lessonMenu = document.getElementById('lesson-menu');
 const lessonSelect = document.getElementById('lesson-select');
-const menuHeader = document.querySelector('.menu-header');
-const menuContent = document.querySelector('.menu-content');
 const flashcard = document.getElementById('flashcard');
 const front = document.getElementById('front');
 const back = document.getElementById('back');
@@ -634,15 +580,6 @@ function populateLessonSelect() {
         }
     });
     updateFlashcard();
-    updateMenuHeader();
-}
-
-// Update menu header based on selection
-function updateMenuHeader() {
-    menuHeader.textContent = currentLesson || currentShoresh || 'Select Category';
-    if (currentLesson) {
-        lessonSelect.value = currentLesson;
-    }
 }
 
 // Navigation function
@@ -663,7 +600,6 @@ function navigate(direction) {
                     currentCardIndex = cardsArray.length - 1;
                 }
                 updateFlashcard();
-                updateMenuHeader();
                 generateWordList();
                 // Reset isNavigating flag after the update
                 isNavigating = false;
@@ -674,7 +610,6 @@ function navigate(direction) {
                 currentCardIndex = cardsArray.length - 1;
             }
             updateFlashcard();
-            updateMenuHeader();
             generateWordList();
             // Reset isNavigating flag
             isNavigating = false;
@@ -872,8 +807,6 @@ lessonSelect.addEventListener('change', (e) => {
     currentCardIndex = 0;
     flashcard.classList.remove('flipped');
     updateFlashcard();
-    updateMenuHeader();
-    setMenuOpen(false);
     generateWordList();
 });
 
@@ -935,7 +868,6 @@ document.getElementById('random-all-button').addEventListener('click', () => {
                     return;
                 }
                 updateFlashcard();
-                updateMenuHeader();
                 generateWordList();
             }, 600); // 600ms matches the transition duration of the flip animation
         } else {
@@ -946,7 +878,6 @@ document.getElementById('random-all-button').addEventListener('click', () => {
                 return;
             }
             updateFlashcard();
-            updateMenuHeader();
             generateWordList();
         }
     }
@@ -1115,7 +1046,6 @@ function searchCardsByEnglishOrHebrew(query) {
         currentCardIndex = cardSet.findIndex(c => (c.english === randomResult.english) || (c.hebrew === randomResult.hebrew));
 
         updateFlashcard();
-        updateMenuHeader();
         progress.textContent = `Search Result: Card 1 of ${topMatches.length} matches`;
         generateWordList();
     } else {
@@ -1125,7 +1055,7 @@ function searchCardsByEnglishOrHebrew(query) {
         progress.textContent = 'No Results';
         currentLesson = null;
         currentShoresh = null;
-        updateMenuHeader();
+        lessonSelect.selectedIndex = 0;
         generateWordList();
     }
 }
@@ -1176,35 +1106,9 @@ document.addEventListener('keydown', (event) => {
     }
 });
    
-// Menu functionality
-let menuIsOpen = false;
-
-function setMenuOpen(isOpen) {
-    menuIsOpen = isOpen;
-    menuContent.style.display = isOpen ? 'block' : 'none';
-    lessonSelect.style.display = isOpen ? 'block' : 'none';
-    menuHeader.setAttribute('aria-expanded', String(isOpen));
-}
-
-menuHeader.addEventListener('click', () => setMenuOpen(!menuIsOpen));
-
-menuHeader.addEventListener('keydown', (e) => {
-    if (e.key === 'Enter' || e.key === ' ') {
-        e.preventDefault();
-        setMenuOpen(!menuIsOpen);
-    }
-});
-
-document.addEventListener('click', (e) => {
-    if (!menuContent.contains(e.target) && e.target !== menuHeader) {
-        setMenuOpen(false);
-    }
-});
-
 // Initialize everything on page load
 window.onload = () => {
     populateLessonSelect();
-    updateMenuHeader();
     updateFlashcard();
     applyFont('font-default');
 };
