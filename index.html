@@ -600,8 +600,8 @@
     <div class="script-font-controls" id="script-font-controls" hidden>
         <label class="script-font-control" for="script-size">
             Size
-            <input type="range" id="script-size" min="60" max="140" step="5" value="100">
-            <output id="script-size-output" for="script-size">100%</output>
+            <input type="range" id="script-size" min="60" max="140" step="5" value="90">
+            <output id="script-size-output" for="script-size">90%</output>
         </label>
         <label class="script-font-control" for="script-stroke">
             Stroke
@@ -782,7 +782,7 @@ function updateFlashcard() {
     
     // Front side
     if (currentFont === 'font-script') {
-        front.innerHTML = `<div class="script-font-stage" id="script-font-stage" role="img"><div class="script-font-fallback">${hebrewText}</div></div>`;
+        front.innerHTML = '<div class="script-font-stage" id="script-font-stage" role="img"></div>';
         document.getElementById('script-font-stage').setAttribute('aria-label', hebrewText);
     } else {
         front.innerHTML = `<div class="hebrew-text">${hebrewText}</div>`;
@@ -902,7 +902,7 @@ function updateFlashcard() {
     }
 
     if (currentFont === 'font-script') {
-        scheduleScriptFontRender(!flashcard.classList.contains('flipped'));
+        renderScriptFont(!flashcard.classList.contains('flipped'));
     }
 
     progress.textContent = `Card ${currentCardIndex + 1} of ${cardsArray.length}`;
@@ -1038,7 +1038,7 @@ function applyFont(font) {
         }
         updateFlashcard();
     } else if (font === 'font-script') {
-        scheduleScriptFontRender(!flashcard.classList.contains('flipped'));
+        renderScriptFont(!flashcard.classList.contains('flipped'));
     }
 }
 

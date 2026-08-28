@@ -35,8 +35,9 @@ const CHAR_MAP = {
 
 const CURVE_SEGMENTS = 96;
 const BASE_SPACING = 100;
+const LETTER_GAP = 12;
 const DRAW_SPEED = 0.24;
-const LINE_ADVANCE = 155;
+const LINE_ADVANCE = 180;
 
 class ScriptFontWriter {
     constructor() {
@@ -57,7 +58,7 @@ class ScriptFontWriter {
         this.animationStart = 0;
         this.isAnimating = false;
         this.scale = 1;
-        this.settings = { size: 100, stroke: 7, speed: 1.5 };
+        this.settings = { size: 90, stroke: 7, speed: 1.5 };
         this.writeGeneration = 0;
         this.resizeFrame = null;
         this.materials = new Set();
@@ -88,7 +89,7 @@ class ScriptFontWriter {
     async write(stage, text, settings = {}, { animate = true } = {}) {
         const generation = ++this.writeGeneration;
         this.settings = {
-            size: Number(settings.size) || 100,
+            size: Number(settings.size) || 90,
             stroke: Number(settings.stroke) || 7,
             speed: Number(settings.speed) || 1.5
         };
@@ -248,7 +249,7 @@ class ScriptFontWriter {
                     }
                 }
 
-                cursorX -= width * BASE_SPACING;
+                cursorX -= width * BASE_SPACING + LETTER_GAP;
             }
         }
 
@@ -265,7 +266,7 @@ class ScriptFontWriter {
     measureText(text) {
         let width = 0;
         for (const char of text) {
-            width += this.getLetterMeta(char).width * BASE_SPACING;
+            width += this.getLetterMeta(char).width * BASE_SPACING + LETTER_GAP;
         }
         return width;
     }
@@ -386,6 +387,7 @@ class ScriptFontWriter {
         if (animate && this.animationQueue.length) {
             this.isAnimating = true;
             this.animationStart = performance.now();
+            this.render();
             this.animationFrame = requestAnimationFrame(time => this.animate(time));
         } else {
             this.render();
