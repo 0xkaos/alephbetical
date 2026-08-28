@@ -382,10 +382,6 @@
                 max-width: 100%;
             }
         }
-        .menu-container:hover .menu-content, 
-        .menu-container:active .menu-content {
-            display: block;
-        }
         .word-list {
             width: 100%;
             max-width: 400px;
@@ -531,7 +527,7 @@
 <body>
     <div class="top-controls">
         <div class="menu-container">
-            <div class="menu-header"></div>
+            <div class="menu-header" role="button" tabindex="0" aria-expanded="false"></div>
             <div class="menu-content">
                 <div class="menu-item" id="lesson-menu">
                     <div class="menu-title">Words & Phrases</div>
@@ -877,8 +873,7 @@ lessonSelect.addEventListener('change', (e) => {
     flashcard.classList.remove('flipped');
     updateFlashcard();
     updateMenuHeader();
-    menuContent.style.display = 'none';
-    menuIsOpen = false;
+    setMenuOpen(false);
     generateWordList();
 });
 
@@ -1183,19 +1178,26 @@ document.addEventListener('keydown', (event) => {
    
 // Menu functionality
 let menuIsOpen = false;
-menuHeader.addEventListener('mouseover', () => {
-    if (!menuIsOpen) {
-        menuContent.style.display = 'block';
-        lessonSelect.style.display = 'block';
-        menuIsOpen = true;
+
+function setMenuOpen(isOpen) {
+    menuIsOpen = isOpen;
+    menuContent.style.display = isOpen ? 'block' : 'none';
+    lessonSelect.style.display = isOpen ? 'block' : 'none';
+    menuHeader.setAttribute('aria-expanded', String(isOpen));
+}
+
+menuHeader.addEventListener('click', () => setMenuOpen(!menuIsOpen));
+
+menuHeader.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' || e.key === ' ') {
+        e.preventDefault();
+        setMenuOpen(!menuIsOpen);
     }
 });
 
 document.addEventListener('click', (e) => {
     if (!menuContent.contains(e.target) && e.target !== menuHeader) {
-        menuContent.style.display = 'none';
-        lessonSelect.style.display = 'none';
-        menuIsOpen = false;
+        setMenuOpen(false);
     }
 });
 
