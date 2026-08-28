@@ -678,7 +678,6 @@
     </div>
     <div class="word-list" id="word-list"></div>
     <script src="data.js"></script>
-    <script src="data2.js"></script>
     <script type="importmap">
         {
             "imports": {
@@ -691,7 +690,6 @@
  <script>
 // JavaScript Code for Flashcard Functionality
 let currentLesson = null;
-let currentShoresh = null;
 let currentCardIndex = 0;
 let isNavigating = false;
 let currentFont = 'font-default';
@@ -740,7 +738,7 @@ function navigate(direction) {
     if (isNavigating) return;
     isNavigating = true;
     
-    let cardsArray = currentLesson ? lessonsData[currentLesson] : (currentShoresh ? shoreshData[currentShoresh] : []);
+    let cardsArray = currentLesson ? lessonsData[currentLesson] : [];
     
     if (cardsArray && cardsArray.length > 0) {
         // First, check if the card is flipped and unflip it
@@ -799,7 +797,7 @@ labelsCheckbox.addEventListener('change', () => {
 });
 
 function updateFlashcard() {
-    let cardsArray = currentLesson ? lessonsData[currentLesson] : (currentShoresh ? shoreshData[currentShoresh] : []);
+    let cardsArray = currentLesson ? lessonsData[currentLesson] : [];
     if (!cardsArray || cardsArray.length === 0) {
         front.innerHTML = '<div>No flashcards available for this selection.</div>';
         back.innerHTML = '<div>No flashcards available for this selection.</div>';
@@ -943,7 +941,7 @@ function generateWordList() {
     // Clear previous content
     wordListContainer.innerHTML = '';
     
-    let cardsArray = currentLesson ? lessonsData[currentLesson] : (currentShoresh ? shoreshData[currentShoresh] : []);
+    let cardsArray = currentLesson ? lessonsData[currentLesson] : [];
     
     if (cardsArray && cardsArray.length > 0) {
         // Generate word list with clickable spans
@@ -966,7 +964,6 @@ document.getElementById('prev-button').addEventListener('click', (e) => { e.stop
 
 lessonSelect.addEventListener('change', (e) => {
     currentLesson = e.target.value;
-    currentShoresh = null;
     currentCardIndex = 0;
     flashcard.classList.remove('flipped');
     updateFlashcard();
@@ -974,8 +971,8 @@ lessonSelect.addEventListener('change', (e) => {
 });
 
 document.getElementById('random-button').addEventListener('click', () => {
-    if (currentLesson || currentShoresh) {
-        const cardsArray = currentLesson ? lessonsData[currentLesson] : shoreshData[currentShoresh];
+    if (currentLesson) {
+        const cardsArray = lessonsData[currentLesson];
         if (cardsArray && cardsArray.length > 0) {
             // If the card is already flipped, flip it back first
             if (flashcard.classList.contains('flipped')) {
@@ -996,50 +993,24 @@ document.getElementById('random-button').addEventListener('click', () => {
 });
 
 document.getElementById('random-all-button').addEventListener('click', () => {
-    const allCards = [...Object.values(lessonsData).flat(), ...Object.values(shoreshData).flat()];
-    if (allCards.length > 0) {
-        const randomCard = allCards[Math.floor(Math.random() * allCards.length)];
-        let sourceName, isLesson = false;
-
-        for (const [source, cards] of [...Object.entries(lessonsData), ...Object.entries(shoreshData)]) {
-            if (cards.includes(randomCard)) {
-                sourceName = source;
-                isLesson = Object.keys(lessonsData).includes(source);
-                break;
-            }
-        }
-
-        currentLesson = null;
-        currentShoresh = null;
-
-        if (isLesson) {
-            currentLesson = sourceName;
-            lessonSelect.value = sourceName;
-        } else {
-            currentShoresh = sourceName;
-            lessonSelect.selectedIndex = 0;
-        }
+    const cardPool = Object.entries(lessonsData).flatMap(([lesson, cards]) =>
+        cards.map((_, index) => ({ lesson, index }))
+    );
+    if (cardPool.length > 0) {
+        const selection = cardPool[Math.floor(Math.random() * cardPool.length)];
+        currentLesson = selection.lesson;
+        lessonSelect.value = selection.lesson;
 
         if (flashcard.classList.contains('flipped')) {
             flashcard.classList.remove('flipped');
             // Wait for the flip animation to finish before updating the card
             setTimeout(() => {
-                const cardsArray = isLesson ? lessonsData[currentLesson] : shoreshData[currentShoresh];
-                currentCardIndex = cardsArray.indexOf(randomCard);
-                if (currentCardIndex === -1) {
-                    console.error('Card not found in selected source:', sourceName);
-                    return;
-                }
+                currentCardIndex = selection.index;
                 updateFlashcard();
                 generateWordList();
             }, 600); // 600ms matches the transition duration of the flip animation
         } else {
-            const cardsArray = isLesson ? lessonsData[currentLesson] : shoreshData[currentShoresh];
-            currentCardIndex = cardsArray.indexOf(randomCard);
-            if (currentCardIndex === -1) {
-                console.error('Card not found in selected source:', sourceName);
-                return;
-            }
+            currentCardIndex = selection.index;
             updateFlashcard();
             generateWordList();
         }
@@ -1228,7 +1199,7 @@ const searchButton = document.getElementById('search-button');
 
 function searchCardsByEnglishOrHebrew(query) {
     console.log("Searching for:", query);
-    const allCards = [...Object.values(lessonsData).flat(), ...Object.values(shoreshData).flat()]
+    const allCards = Object.values(lessonsData).flat()
                       .filter(card => ('english' in card && card.english !== undefined) || ('hebrew' in card && card.hebrew !== undefined));
     console.log("Total valid cards to search:", allCards.length);
 
@@ -1262,25 +1233,20 @@ function searchCardsByEnglishOrHebrew(query) {
         const topMatches = results.filter(card => card.score === highestScore);
         const randomResult = topMatches[Math.floor(Math.random() * topMatches.length)];
 
-        let sourceName, isLesson;
-        for (const [source, cards] of [...Object.entries(lessonsData), ...Object.entries(shoreshData)]) {
-            if (cards.some(c => (c.english === randomResult.english) || (c.hebrew === randomResult.hebrew))) {
+        let sourceName;
+        let sourceCardIndex = -1;
+        for (const [source, cards] of Object.entries(lessonsData)) {
+            const matchIndex = cards.findIndex(c => (c.english === randomResult.english) || (c.hebrew === randomResult.hebrew));
+            if (matchIndex !== -1) {
                 sourceName = source;
-                isLesson = Object.keys(lessonsData).includes(source);
+                sourceCardIndex = matchIndex;
                 break;
             }
         }
 
-        if (isLesson) {
-            currentLesson = sourceName;
-            lessonSelect.value = sourceName;
-        } else {
-            currentShoresh = sourceName;
-            lessonSelect.selectedIndex = 0;
-        }
-
-        const cardSet = isLesson ? lessonsData[currentLesson] : shoreshData[currentShoresh];
-        currentCardIndex = cardSet.findIndex(c => (c.english === randomResult.english) || (c.hebrew === randomResult.hebrew));
+        currentLesson = sourceName;
+        currentCardIndex = sourceCardIndex;
+        lessonSelect.value = sourceName;
 
         updateFlashcard();
         progress.textContent = `Search Result: Card 1 of ${topMatches.length} matches`;
@@ -1291,7 +1257,6 @@ function searchCardsByEnglishOrHebrew(query) {
         back.innerHTML = '<div>No cards found matching your search.</div>';
         progress.textContent = 'No Results';
         currentLesson = null;
-        currentShoresh = null;
         lessonSelect.selectedIndex = 0;
         generateWordList();
     }
@@ -1353,7 +1318,7 @@ window.onload = () => {
 // Ensure that clicking the flashcard flips it, unless clicking an audio button
 flashcard.addEventListener('click', (e) => {
     if (!e.target.closest('.audio-button')) {
-        if (currentLesson || currentShoresh) {
+        if (currentLesson) {
             flashcard.classList.toggle('flipped');
         }
     }
