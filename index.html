@@ -600,8 +600,8 @@
     <div class="script-font-controls" id="script-font-controls" hidden>
         <label class="script-font-control" for="script-size">
             Size
-            <input type="range" id="script-size" min="60" max="140" step="5" value="90">
-            <output id="script-size-output" for="script-size">90%</output>
+            <input type="range" id="script-size" min="60" max="140" step="5" value="100">
+            <output id="script-size-output" for="script-size">100%</output>
         </label>
         <label class="script-font-control" for="script-stroke">
             Stroke
@@ -1044,7 +1044,7 @@ function applyFont(font) {
 
 function getScriptFontSettings() {
     return {
-        size: Number(scriptSize.value),
+        size: Math.max(20, Number(scriptSize.value) - 40),
         stroke: Number(scriptStroke.value),
         speed: Number(scriptSpeed.value)
     };

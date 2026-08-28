@@ -37,7 +37,7 @@ const CURVE_SEGMENTS = 96;
 const BASE_SPACING = 100;
 const LETTER_GAP = 12;
 const DRAW_SPEED = 0.24;
-const LINE_ADVANCE = 180;
+const LINE_ADVANCE = 195;
 
 class ScriptFontWriter {
     constructor() {
@@ -58,7 +58,8 @@ class ScriptFontWriter {
         this.animationStart = 0;
         this.isAnimating = false;
         this.scale = 1;
-        this.settings = { size: 90, stroke: 7, speed: 1.5 };
+        this.settings = { size: 60, stroke: 7, speed: 1.5 };
+        this.effectiveStroke = 7;
         this.writeGeneration = 0;
         this.resizeFrame = null;
         this.materials = new Set();
@@ -89,7 +90,7 @@ class ScriptFontWriter {
     async write(stage, text, settings = {}, { animate = true } = {}) {
         const generation = ++this.writeGeneration;
         this.settings = {
-            size: Number(settings.size) || 90,
+            size: Number(settings.size) || 60,
             stroke: Number(settings.stroke) || 7,
             speed: Number(settings.speed) || 1.5
         };
@@ -188,6 +189,11 @@ class ScriptFontWriter {
         };
         const group = new THREE.Group();
         const lines = this.chooseLines(text);
+        const glyphCount = [...text].filter(char => CHAR_MAP[char]).length;
+        const strokeCap = lines.length >= 3 || glyphCount >= 20
+            ? 4
+            : (lines.length >= 2 || glyphCount >= 10 ? 5 : this.settings.stroke);
+        this.effectiveStroke = Math.min(this.settings.stroke, strokeCap);
 
         for (let lineIndex = 0; lineIndex < lines.length; lineIndex += 1) {
             const lineText = lines[lineIndex];
@@ -225,7 +231,7 @@ class ScriptFontWriter {
 
                         const material = new LineMaterial({
                             color: 0xffffff,
-                            linewidth: this.settings.stroke,
+                            linewidth: this.effectiveStroke,
                             worldUnits: false,
                             alphaToCoverage: true,
                             resolution: new THREE.Vector2(1, 1)
