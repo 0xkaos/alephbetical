@@ -322,11 +322,13 @@
         .font-size-button:hover {
             background-color: #ddd;
         }
-        .flashcard-back .usage-hebrew {
+        .flashcard-back .usage-block {
             position: relative;
-            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
-        .flashcard-back .usage-hebrew .usage-english {
+        .flashcard-back .usage-english {
             visibility: hidden;
             width: 100%;
             background-color: rgba(255, 255, 255, 0.8);
@@ -342,9 +344,21 @@
             opacity: 0;
             transition: opacity 0.3s;
         }
-        .flashcard-back .usage-hebrew:hover .usage-english {
-            visibility: visible;
-            opacity: 1;
+        @media (hover: hover) and (pointer: fine) {
+            .flashcard-back .usage-hebrew-text:hover + .usage-english {
+                visibility: visible;
+                opacity: 1;
+            }
+        }
+        @media (hover: none), (pointer: coarse) {
+            .flashcard-back .usage-hebrew-text.has-translation {
+                cursor: pointer;
+                touch-action: manipulation;
+            }
+            .flashcard-back .usage-block.translation-visible .usage-english {
+                visibility: visible;
+                opacity: 1;
+            }
         }
         .email-button {
             background: none;
@@ -906,8 +920,8 @@ function updateFlashcard() {
         }
 
         backContent += `
-        <div class="usage-hebrew" dir="rtl">
-            ${showLabels ? 'דוגמה: ' : ''}${showLabels ? `<strong>${hebrewSentence}</strong>` : hebrewSentence}${punctuation}
+        <div class="usage-block" dir="rtl">
+            <span class="usage-hebrew-text${card.sentence2 ? ' has-translation' : ''}">${showLabels ? 'דוגמה: ' : ''}${showLabels ? `<strong>${hebrewSentence}</strong>` : hebrewSentence}${punctuation}</span>
             ${card.sentence2 ? `<div class="usage-english" dir="ltr">${showLabels ? 'Example: ' : ''}${showLabels ? `<strong>${card.sentence2}</strong>` : card.sentence2}</div>` : ''}
             ${sentenceAudioButton}
         </div>
@@ -927,6 +941,17 @@ function updateFlashcard() {
                 audio.play();
             });
         }
+    }
+
+    const sentenceText = back.querySelector('.usage-hebrew-text.has-translation');
+    if (sentenceText) {
+        const sentenceBlock = sentenceText.closest('.usage-block');
+        sentenceText.addEventListener('click', (e) => {
+            if (!window.matchMedia('(hover: none), (pointer: coarse)').matches) return;
+            e.stopPropagation();
+            const isVisible = sentenceBlock.classList.toggle('translation-visible');
+            sentenceText.setAttribute('aria-expanded', String(isVisible));
+        });
     }
 
     if (currentFont === 'font-script') {
