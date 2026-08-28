@@ -246,6 +246,7 @@
             margin-top: 10px;
         }
         .script-font-controls {
+            position: relative;
             display: flex;
             flex-wrap: wrap;
             align-items: center;
@@ -254,12 +255,20 @@
             width: 100%;
             max-width: 520px;
             margin-top: 10px;
-            padding: 10px 12px;
+            padding: 10px 58px 10px 12px;
             border: 1px solid #ff9900;
             border-radius: 8px;
             background: rgba(255, 255, 255, 0.75);
         }
         .script-font-controls[hidden] {
+            display: none;
+        }
+        .script-font-controls.is-collapsed {
+            min-height: 38px;
+            padding: 6px 58px 6px 12px;
+        }
+        .script-font-controls.is-collapsed .script-font-control,
+        .script-font-controls.is-collapsed #script-replay {
             display: none;
         }
         .script-font-control {
@@ -284,6 +293,17 @@
             border-radius: 5px;
             background: #fff;
             color: #333;
+            cursor: pointer;
+        }
+        #script-controls-toggle {
+            position: absolute;
+            top: 6px;
+            right: 8px;
+            padding: 4px 8px;
+            border: 1px solid #ff9900;
+            border-radius: 5px;
+            background: #fff;
+            color: #555;
             cursor: pointer;
         }
         .font-size-button {
@@ -598,6 +618,7 @@
     </div>
 
     <div class="script-font-controls" id="script-font-controls" hidden>
+        <button type="button" id="script-controls-toggle" aria-expanded="true">Hide</button>
         <label class="script-font-control" for="script-size">
             Size
             <input type="range" id="script-size" min="60" max="140" step="5" value="100">
@@ -689,6 +710,7 @@ const scriptSpeed = document.getElementById('script-speed');
 const scriptSizeOutput = document.getElementById('script-size-output');
 const scriptStrokeOutput = document.getElementById('script-stroke-output');
 const scriptSpeedOutput = document.getElementById('script-speed-output');
+const scriptControlsToggle = document.getElementById('script-controls-toggle');
 
 // Populate the lesson selection dropdown without sorting
 function populateLessonSelect() {
@@ -1076,6 +1098,11 @@ function scheduleScriptFontRender(animate = true) {
 });
 
 document.getElementById('script-replay').addEventListener('click', () => renderScriptFont(true));
+scriptControlsToggle.addEventListener('click', () => {
+    const isCollapsed = scriptFontControls.classList.toggle('is-collapsed');
+    scriptControlsToggle.textContent = isCollapsed ? 'Show' : 'Hide';
+    scriptControlsToggle.setAttribute('aria-expanded', String(!isCollapsed));
+});
 window.addEventListener('script-font-ready', () => renderScriptFont(!flashcard.classList.contains('flipped')));
 updateScriptFontOutputs();
 
