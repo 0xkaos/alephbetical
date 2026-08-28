@@ -539,11 +539,6 @@
                         <option value="" disabled selected>-</option>
                     </select>
                 </div>
-                <div class="menu-item" id="shoresh-menu">
-                    <select id="shoresh-select" class="submenu-select">
-                        <option value="" disabled selected>-</option>
-                    </select>
-                </div>
             </div>
         </div>
         <div class="font-and-checkbox">
@@ -616,9 +611,7 @@ let isNavigating = false;
 
 // Get DOM elements
 const lessonMenu = document.getElementById('lesson-menu');
-const shoreshMenu = document.getElementById('shoresh-menu');
 const lessonSelect = document.getElementById('lesson-select');
-const shoreshSelect = document.getElementById('shoresh-select');
 const menuHeader = document.querySelector('.menu-header');
 const menuContent = document.querySelector('.menu-content');
 const flashcard = document.getElementById('flashcard');
@@ -648,37 +641,11 @@ function populateLessonSelect() {
     updateMenuHeader();
 }
 
-// Populate the shoresh selection dropdown without sorting
-function populateShoreshSelect() {
-    const sortedShoreshim = Object.keys(shoreshData).sort((a, b) => a.localeCompare(b, 'he', { sensitivity: 'base' }));
-    sortedShoreshim.forEach((shoresh, index) => {
-        const option = document.createElement('option');
-        option.value = shoresh;
-        option.textContent = shoresh;
-        shoreshSelect.appendChild(option);
-        if (index === 0) {
-            option.selected = true;
-            currentShoresh = shoresh;
-        }
-    });
-}
-
 // Update menu header based on selection
 function updateMenuHeader() {
     menuHeader.textContent = currentLesson || currentShoresh || 'Select Category';
     if (currentLesson) {
         lessonSelect.value = currentLesson;
-    } else if (currentShoresh) {
-        shoreshSelect.value = currentShoresh;
-    }
-}
-
-// Reset the other dropdown when one is selected
-function resetOtherDropdown(selectedDropdown) {
-    if (selectedDropdown === lessonSelect) {
-        shoreshSelect.selectedIndex = 0;
-    } else {
-        lessonSelect.selectedIndex = 0;
     }
 }
 
@@ -912,20 +879,6 @@ lessonSelect.addEventListener('change', (e) => {
     updateMenuHeader();
     menuContent.style.display = 'none';
     menuIsOpen = false;
-    resetOtherDropdown(lessonSelect);
-    generateWordList();
-});
-
-shoreshSelect.addEventListener('change', (e) => {
-    currentShoresh = e.target.value;
-    currentLesson = null;
-    currentCardIndex = 0;
-    flashcard.classList.remove('flipped');
-    updateFlashcard();
-    updateMenuHeader();
-    menuContent.style.display = 'none';
-    menuIsOpen = false;
-    resetOtherDropdown(shoreshSelect);
     generateWordList();
 });
 
@@ -971,10 +924,8 @@ document.getElementById('random-all-button').addEventListener('click', () => {
         if (isLesson) {
             currentLesson = sourceName;
             lessonSelect.value = sourceName;
-            shoreshSelect.selectedIndex = 0;
         } else {
             currentShoresh = sourceName;
-            shoreshSelect.value = sourceName;
             lessonSelect.selectedIndex = 0;
         }
 
@@ -1159,10 +1110,9 @@ function searchCardsByEnglishOrHebrew(query) {
 
         if (isLesson) {
             currentLesson = sourceName;
-            lessonSelect.value = sourceName;shoreshSelect.selectedIndex = 0;
+            lessonSelect.value = sourceName;
         } else {
             currentShoresh = sourceName;
-            shoreshSelect.value = sourceName;
             lessonSelect.selectedIndex = 0;
         }
 
@@ -1237,7 +1187,6 @@ menuHeader.addEventListener('mouseover', () => {
     if (!menuIsOpen) {
         menuContent.style.display = 'block';
         lessonSelect.style.display = 'block';
-        shoreshSelect.style.display = 'block';
         menuIsOpen = true;
     }
 });
@@ -1246,7 +1195,6 @@ document.addEventListener('click', (e) => {
     if (!menuContent.contains(e.target) && e.target !== menuHeader) {
         menuContent.style.display = 'none';
         lessonSelect.style.display = 'none';
-        shoreshSelect.style.display = 'none';
         menuIsOpen = false;
     }
 });
@@ -1254,7 +1202,6 @@ document.addEventListener('click', (e) => {
 // Initialize everything on page load
 window.onload = () => {
     populateLessonSelect();
-    populateShoreshSelect();
     updateMenuHeader();
     updateFlashcard();
     applyFont('font-default');
